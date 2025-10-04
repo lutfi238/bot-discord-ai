@@ -66,42 +66,42 @@ Tunggu hingga selesai. Atau tunggu auto-install saat Run pertama kali.
 
 ## Keep Bot Always Online (24/7)
 
-### Option 1: Replit Always On (Paid - $7/month)
-- Paling reliable
-- Klik "Deployments" → Enable "Always On"
+⚠️ **Important Update (2024-2025):**
+Replit free tier policies have changed. Traditional keep-alive methods with UptimeRobot are **less reliable** now.
 
-### Option 2: UptimeRobot (FREE)
-Tambahkan web server sederhana untuk di-ping:
+### Option 1: Replit Deployments (Paid - $7/month) ⭐ Most Reliable
+- Reserved VM that stays always on
+- Auto-restart on crash
+- Better performance
+- Click "Deploy" → "Reserved VM"
 
-1. Install express:
-```bash
-npm install express
-```
+### Option 2: UptimeRobot Keep-Alive (FREE - May Work)
+Bot sudah include Express server untuk keep-alive. You can try:
 
-2. Tambahkan di `index.js` (sebelum `client.login()`):
-```javascript
-// Keep-alive server for UptimeRobot
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3000;
+**Setup UptimeRobot:**
 
-app.get('/', (req, res) => {
-  res.send('Bot is running!');
-});
+1. Bot sudah include Express server (no need to add code!) ✅
 
-app.listen(PORT, () => {
-  console.log(`Keep-alive server running on port ${PORT}`);
-});
-```
+2. Get your Repl URL:
+   - Di Replit, klik tab **"Webview"** 
+   - Copy URL (contoh: `https://bot-discord-ai-username.replit.app`)
 
 3. Setup UptimeRobot:
    - Daftar di https://uptimerobot.com (FREE)
    - Add New Monitor → HTTP(s)
-   - URL: (copy URL Repl kamu, contoh: `https://bot-discord-ai.username.repl.co`)
-   - Monitoring Interval: 5 minutes
+   - Friendly Name: `Discord Bot`
+   - URL: (paste URL Repl Anda)
+   - Monitoring Interval: `5 minutes`
    - Save!
 
-UptimeRobot akan ping setiap 5 menit, jadi bot tidak sleep! ✅
+UptimeRobot akan ping setiap 5 menit untuk mencoba keep bot awake.
+
+⚠️ **Disclaimer:** This may not guarantee 100% uptime on Replit free tier anymore. Consider paid Replit Deployments or alternative platforms (Render.com) for reliable 24/7 uptime.
+
+### Option 3: Alternative FREE Platforms (More Reliable)
+- **Render.com** - 750 hours/month free (enough for 24/7 one bot)
+- **Railway.app** - $5 credit/month free
+Both have better uptime than Replit free tier for Discord bots.
 
 ## Troubleshooting
 
