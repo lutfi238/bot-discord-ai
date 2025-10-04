@@ -36,7 +36,17 @@ module.exports = {
 
         try {
             const channelId = interaction.channel.id;
-            const history = conversationHistory.get(channelId) || [];
+            
+            // Get or create conversation data with timestamp
+            let conversationData = conversationHistory.get(channelId);
+            if (!conversationData) {
+                conversationData = { history: [], lastActivity: Date.now() };
+                conversationHistory.set(channelId, conversationData);
+            } else {
+                conversationData.lastActivity = Date.now();
+            }
+            
+            const history = conversationData.history;
 
             // Convert stored history (assistant/user) into OpenAI/OpenRouter format
             const messages = history.map(m => ({ role: m.role, content: m.content }))
@@ -103,15 +113,27 @@ module.exports = {
             }
             const formatted = formatForDiscord(raw);
 
-            history.push({ role: 'user', content: question });
-            // Store raw text in history to avoid compounding formatting transforms
-            history.push({ role: 'assistant', content: raw });
+            // Truncate long responses to save memory
+            const truncatedRaw = raw.length > 4000 ? raw.substring(0, 4000) + '...' : raw;
+            const truncatedQuestion = question.length > 1000 ? question.substring(0, 1000) + '...' : question;
+            
+            history.push({ role: 'user', content: truncatedQuestion });
+            history.push({ role: 'assistant', content: truncatedRaw });
 
-            // Cap history to last 20 messages to avoid unbounded growth
-            const MAX_MESSAGES = 20;
-            const trimmed = history.slice(-MAX_MESSAGES);
-            conversationHistory.set(channelId, trimmed);
-            // Note: Using in-memory storage for hosting compatibility
+            // Aggressive memory limits for 500MB hosting
+            const MAX_MESSAGES = 6; // Reduced from 20 to 6 (3 exchanges)
+            conversationData.history = history.slice(-MAX_MESSAGES);
+            conversationData.lastActivity = Date.now();
+            
+            // Limit total conversations stored
+            if (conversationHistory.size > 50) {
+                // Remove oldest conversations
+                const entries = Array.from(conversationHistory.entries());
+                entries.sort((a, b) => a[1].lastActivity - b[1].lastActivity);
+                const toRemove = entries.slice(0, 25); // Remove half
+                toRemove.forEach(([id]) => conversationHistory.delete(id));
+                console.log(`🧹 Auto-cleanup: removed 25 old conversations`);
+            }
 
             const chunks = splitMessagePreservingCodeBlocks(formatted, 1990);
 

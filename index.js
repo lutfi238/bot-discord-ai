@@ -1,12 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { Client, Collection, GatewayIntentBits, ActivityType, Partials } = require('discord.js');
-const axios = require('axios');
+const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
 require('dotenv').config();
-const { formatForDiscord, splitMessagePreservingCodeBlocks } = require('./utils/formatting');
-const { SYSTEM_PROMPT } = require('./utils/prompt');
-const { callChatCompletion } = require('./utils/api');
-const { createWarningEmbed, createErrorEmbed } = require('./utils/embeds');
+const { logMemoryUsage, startMemoryMonitoring } = require('./utils/memoryMonitor');
 // Database utilities removed for hosting compatibility
 
 // Keep-alive server for Replit/UptimeRobot (prevents bot from sleeping)
@@ -34,8 +30,25 @@ app.listen(PORT, () => {
     console.log(`✅ Keep-alive server running on port ${PORT}`);
 });
 
+// Optimized client for low memory (500MB)
 const client = new Client({
     intents: [GatewayIntentBits.Guilds],
+    // Disable caching to save memory
+    makeCache: () => null,
+    sweepers: {
+        messages: {
+            interval: 300, // 5 minutes
+            lifetime: 180, // Keep messages for 3 minutes
+        },
+        users: {
+            interval: 3600, // 1 hour
+            filter: () => user => user.bot && user.id !== client.user.id,
+        },
+    },
+    // Limit message cache
+    messageCacheMaxSize: 10,
+    messageCacheLifetime: 180,
+    messageSweepInterval: 300,
 });
 
 client.commands = new Collection();
@@ -55,12 +68,31 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'claude-sonnet-4-5';
 const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL || 'https://api.cometapi.com/v1';
 
-// In-memory conversation history (optimized for hosting)
+// In-memory conversation history (optimized for 500MB RAM)
 const conversationHistory = new Map();
+const MAX_CONVERSATIONS = 50; // Limit total conversations
+const CONVERSATION_EXPIRY = 30 * 60 * 1000; // 30 minutes
+
+// Auto-cleanup old conversations every 10 minutes
+setInterval(() => {
+    const now = Date.now();
+    let cleaned = 0;
+    for (const [channelId, data] of conversationHistory.entries()) {
+        if (now - data.lastActivity > CONVERSATION_EXPIRY) {
+            conversationHistory.delete(channelId);
+            cleaned++;
+        }
+    }
+    if (cleaned > 0) {
+        console.log(`🧹 Cleaned ${cleaned} expired conversations. Active: ${conversationHistory.size}`);
+        if (global.gc) global.gc(); // Force garbage collection if available
+    }
+}, 10 * 60 * 1000);
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
     console.log(`🚀 Using Claude Sonnet 4.5 via Comet API - Advanced AI responses!`);
+    console.log(`💾 Memory optimized for 500MB RAM hosting`);
     console.log(`Model: ${OPENROUTER_MODEL}`);
     client.user.setPresence({
         activities: [
@@ -68,6 +100,10 @@ client.once('ready', () => {
         ],
         status: 'online',
     });
+    
+    // Start memory monitoring
+    logMemoryUsage('Bot Ready');
+    startMemoryMonitoring(15); // Check every 15 minutes
 });
 
 client.on('interactionCreate', async interaction => {
@@ -76,6 +112,28 @@ client.on('interactionCreate', async interaction => {
     const command = client.commands.get(interaction.commandName);
 
     if (!command) return;
+
+    // Memory limit check - prevent overload
+    const usage = process.memoryUsage();
+    const heapUsedMB = usage.heapUsed / 1024 / 1024;
+    if (heapUsedMB > 450) { // 450MB threshold for 500MB limit
+        console.warn(`⚠️ High memory usage: ${Math.round(heapUsedMB)}MB`);
+        // Force cleanup
+        const oldSize = conversationHistory.size;
+        if (oldSize > 20) {
+            const keys = Array.from(conversationHistory.keys());
+            const toDelete = keys.slice(0, Math.floor(oldSize / 2));
+            toDelete.forEach(k => conversationHistory.delete(k));
+            console.log(`🧹 Emergency cleanup: removed ${toDelete.length} conversations`);
+        }
+        if (global.gc) global.gc();
+        
+        await interaction.reply({ 
+            content: '⚠️ Bot is running low on memory. Please try again in a moment.', 
+            ephemeral: true 
+        });
+        return;
+    }
 
     try {
         await command.execute(

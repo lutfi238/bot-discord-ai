@@ -4,10 +4,10 @@
   "description": "Discord AI Bot with Comet API (Claude Sonnet 4.5)",
   "main": "index.js",
   "scripts": {
-    "start": "node --max-old-space-size=400 index.js",
+    "start": "node --max-old-space-size=350 --expose-gc --gc-interval=100 index.js",
     "deploy": "node deploy-commands.js",
-    "dev": "node index.js",
-    "replit": "npm install && node index.js",
+    "dev": "node --expose-gc index.js",
+    "replit": "npm install && node --max-old-space-size=350 --expose-gc index.js",
     "vercel-build": "echo 'Build complete'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

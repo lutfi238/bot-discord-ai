@@ -5,11 +5,11 @@
 
 echo "Starting Discord Bot on Wispbyte..."
 echo "Memory Limit: 0.5GB"
-echo "Using AIML API with DeepSeek v3.1"
+echo "Using Claude Sonnet 4.5 via Comet API"
 
-# Set environment variables for optimization
+# Set environment variables for aggressive memory optimization
 export NODE_ENV=production
-export NODE_OPTIONS="--max-old-space-size=400 --gc-interval=100"
+export NODE_OPTIONS="--max-old-space-size=350 --expose-gc --gc-interval=100 --optimize-for-size"
 
 # Install dependencies if needed
 if [ ! -d "node_modules" ]; then
@@ -24,7 +24,7 @@ if [ ! -f ".commands_deployed" ]; then
     touch .commands_deployed
 fi
 
-# Start the bot with memory optimization
-echo "Starting bot with memory optimization..."
-node --max-old-space-size=400 --gc-interval=100 index.js
+# Start the bot with aggressive memory optimization
+echo "Starting bot with aggressive memory optimization..."
+node --max-old-space-size=350 --expose-gc --gc-interval=100 --optimize-for-size index.js
 
