@@ -1,7 +1,7 @@
 {
   "name": "bot-discord",
-  "version": "1.0.0",
-  "description": "Discord AI Bot with Comet API (Claude Sonnet 4.5)",
+  "version": "2.0.0",
+  "description": "Discord AI Bot with Groq API (LLaMA 3.3 70B Versatile)",
   "main": "index.js",
   "scripts": {
     "start": "node --max-old-space-size=350 --expose-gc --gc-interval=100 index.js",

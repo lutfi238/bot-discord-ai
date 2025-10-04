@@ -1,9 +1,10 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 const { formatForDiscord, splitMessagePreservingCodeBlocks } = require('../utils/formatting');
 const { SYSTEM_PROMPT } = require('../utils/prompt');
 const { callChatCompletion, callChatCompletionStream } = require('../utils/api');
 const { createWarningEmbed, createErrorEmbed } = require('../utils/embeds');
+const { rateLimiter } = require('../utils/groqRateLimit');
 // Database utilities removed for hosting compatibility
 
 module.exports = {
@@ -52,6 +53,21 @@ module.exports = {
             const messages = history.map(m => ({ role: m.role, content: m.content }))
                 .concat([{ role: 'user', content: question }]);
 
+            // Rate limit handler
+            const onRateLimit = async (rateLimitInfo) => {
+                const message = rateLimiter.getRateLimitMessage(rateLimitInfo);
+                const embed = new EmbedBuilder()
+                    .setColor(0xFF9900)
+                    .setTitle('⏱️ Groq API Rate Limit Reached')
+                    .setDescription(message)
+                    .setFooter({ text: 'Groq API Free Tier Limits' })
+                    .setTimestamp();
+                
+                try {
+                    await interaction.editReply({ embeds: [embed] });
+                } catch (_) { /* ignore */ }
+            };
+
             let raw;
             if (useStream) {
                 // Streaming mode: incrementally edit the reply
@@ -77,6 +93,7 @@ module.exports = {
                             } catch (_) { /* ignore */ }
                         }
                     },
+                    onRateLimit,
                 }).then((full) => { raw = full; });
             } else {
                 // Non-streaming mode
@@ -108,7 +125,8 @@ module.exports = {
                         try {
                             await interaction.followUp({ embeds: [embed], ephemeral: true });
                         } catch (_) { /* ignore */ }
-                    }
+                    },
+                    onRateLimit,
                 });
             }
             const formatted = formatForDiscord(raw);
@@ -144,7 +162,24 @@ module.exports = {
                 await interaction.followUp(chunks[i]);
             }
         } catch (error) {
-            console.error('Error calling OpenRouter API:', error?.response?.data || error.message);
+            console.error('Error calling Groq API:', error?.response?.data || error.message);
+            
+            // Handle rate limit errors specifically
+            if (error.rateLimitInfo) {
+                const message = rateLimiter.getRateLimitMessage(error.rateLimitInfo);
+                const embed = new EmbedBuilder()
+                    .setColor(0xFF9900)
+                    .setTitle('⏱️ Groq API Rate Limit Reached')
+                    .setDescription(message)
+                    .setFooter({ text: 'Groq API Free Tier Limits' })
+                    .setTimestamp();
+                
+                try {
+                    await interaction.editReply({ embeds: [embed] });
+                } catch (_) { /* ignore */ }
+                return;
+            }
+            
             await interaction.editReply('Sorry, I encountered an error trying to get a response.');
         }
     },

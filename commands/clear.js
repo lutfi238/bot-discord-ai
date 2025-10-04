@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { rateLimiter } = require('../utils/groqRateLimit');
 // Database utilities removed for hosting compatibility
 
 module.exports = {
@@ -19,15 +20,35 @@ module.exports = {
         // Force garbage collection if available
         if (global.gc) global.gc();
         
-        // Show memory stats
+        // Show memory and rate limit stats
         const usage = process.memoryUsage();
         const heapUsedMB = Math.round(usage.heapUsed / 1024 / 1024);
+        const stats = rateLimiter.getStats();
         
-        await interaction.reply({
-            content: existed 
-                ? `✅ New chat started. Previous context cleared.\n💾 Memory: ${heapUsedMB}MB | Active conversations: ${conversationHistory.size}` 
-                : `✅ New chat started.\n💾 Memory: ${heapUsedMB}MB | Active conversations: ${conversationHistory.size}`,
-            ephemeral: true,
-        });
+        const embed = new EmbedBuilder()
+            .setColor(0x00FF00)
+            .setTitle(existed ? '✅ Chat Cleared' : '✅ New Chat Started')
+            .setDescription(existed ? 'Previous conversation context has been cleared.' : 'Starting a new conversation.')
+            .addFields(
+                { 
+                    name: '💾 Memory Usage', 
+                    value: `${heapUsedMB}MB | Active conversations: ${conversationHistory.size}`, 
+                    inline: false 
+                },
+                { 
+                    name: '📊 Groq API Usage (Requests)', 
+                    value: `Minute: ${stats.requestsPerMinute.current}/${stats.requestsPerMinute.limit} (${stats.requestsPerMinute.percentage}%)\nDay: ${stats.requestsPerDay.current}/${stats.requestsPerDay.limit} (${stats.requestsPerDay.percentage}%)`, 
+                    inline: true 
+                },
+                { 
+                    name: '🎯 Groq API Usage (Tokens)', 
+                    value: `Minute: ${stats.tokensPerMinute.current.toLocaleString()}/${stats.tokensPerMinute.limit.toLocaleString()} (${stats.tokensPerMinute.percentage}%)\nDay: ${stats.tokensPerDay.current.toLocaleString()}/${stats.tokensPerDay.limit.toLocaleString()} (${stats.tokensPerDay.percentage}%)`, 
+                    inline: true 
+                }
+            )
+            .setFooter({ text: 'Groq API - llama-3.3-70b-versatile' })
+            .setTimestamp();
+        
+        await interaction.reply({ embeds: [embed], ephemeral: true });
     },
 }; 

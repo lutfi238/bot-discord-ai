@@ -5,7 +5,8 @@
 
 echo "Starting Discord Bot on Wispbyte..."
 echo "Memory Limit: 0.5GB"
-echo "Using Claude Sonnet 4.5 via Comet API"
+echo "Using Groq API with LLaMA 3.3 70B Versatile"
+echo "Rate Limits: 30 RPM, 1K RPD, 12K TPM, 100K TPD"
 
 # Set environment variables for aggressive memory optimization
 export NODE_ENV=production

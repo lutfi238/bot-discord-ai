@@ -2,7 +2,29 @@ const fs = require('fs');
 const path = require('path');
 const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
 require('dotenv').config();
-const { logMemoryUsage, startMemoryMonitoring } = require('./utils/memoryMonitor');
+
+// Optional memory monitoring (fallback if file doesn't exist)
+let logMemoryUsage, startMemoryMonitoring;
+try {
+    const memoryMonitor = require('./utils/memoryMonitor');
+    logMemoryUsage = memoryMonitor.logMemoryUsage;
+    startMemoryMonitoring = memoryMonitor.startMemoryMonitoring;
+} catch (e) {
+    // Fallback implementations if memoryMonitor doesn't exist
+    logMemoryUsage = (label) => {
+        const usage = process.memoryUsage();
+        const heapUsedMB = Math.round(usage.heapUsed / 1024 / 1024);
+        const heapTotalMB = Math.round(usage.heapTotal / 1024 / 1024);
+        const rssMB = Math.round(usage.rss / 1024 / 1024);
+        console.log(`📊 ${label}: Heap ${heapUsedMB}/${heapTotalMB}MB | RSS ${rssMB}MB`);
+    };
+    startMemoryMonitoring = () => {
+        setInterval(() => {
+            logMemoryUsage('Periodic Check');
+            if (global.gc) global.gc();
+        }, 15 * 60 * 1000);
+    };
+}
 // Database utilities removed for hosting compatibility
 
 // Keep-alive server for Replit/UptimeRobot (prevents bot from sleeping)
@@ -33,8 +55,6 @@ app.listen(PORT, () => {
 // Optimized client for low memory (500MB)
 const client = new Client({
     intents: [GatewayIntentBits.Guilds],
-    // Disable caching to save memory
-    makeCache: () => null,
     sweepers: {
         messages: {
             interval: 300, // 5 minutes
@@ -45,10 +65,6 @@ const client = new Client({
             filter: () => user => user.bot && user.id !== client.user.id,
         },
     },
-    // Limit message cache
-    messageCacheMaxSize: 10,
-    messageCacheLifetime: 180,
-    messageSweepInterval: 300,
 });
 
 client.commands = new Collection();
@@ -63,10 +79,10 @@ for (const file of commandFiles) {
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
-// Comet API Configuration
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'claude-sonnet-4-5';
-const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL || 'https://api.cometapi.com/v1';
+// Groq API Configuration
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_BASE_URL = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
 
 // In-memory conversation history (optimized for 500MB RAM)
 const conversationHistory = new Map();
@@ -91,12 +107,13 @@ setInterval(() => {
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    console.log(`🚀 Using Claude Sonnet 4.5 via Comet API - Advanced AI responses!`);
+    console.log(`🚀 Using Groq API - Ultra-fast AI responses with LLaMA 3.3 70B!`);
     console.log(`💾 Memory optimized for 500MB RAM hosting`);
-    console.log(`Model: ${OPENROUTER_MODEL}`);
+    console.log(`Model: ${GROQ_MODEL}`);
+    console.log(`📊 Rate Limits: 30 RPM, 1K RPD, 12K TPM, 100K TPD`);
     client.user.setPresence({
         activities: [
-            { name: '/ask with Claude Sonnet 4.5', type: ActivityType.Playing },
+            { name: '/ask with llama-3.3-70b-versatile', type: ActivityType.Playing },
         ],
         status: 'online',
     });
@@ -138,7 +155,7 @@ client.on('interactionCreate', async interaction => {
     try {
         await command.execute(
             interaction,
-            { apiKey: OPENROUTER_API_KEY, model: OPENROUTER_MODEL, baseUrl: OPENROUTER_BASE_URL },
+            { apiKey: GROQ_API_KEY, model: GROQ_MODEL, baseUrl: GROQ_BASE_URL },
             conversationHistory
         );
     } catch (error) {
