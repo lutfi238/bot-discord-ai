@@ -43,8 +43,17 @@ Value: https://api.cometapi.com/v1
 #### 4. Update Code untuk Membaca Secrets
 Replit menggunakan `process.env` yang sama, jadi code sudah compatible! ✅
 
-#### 5. Run Bot
+#### 5. Install Dependencies (PENTING!)
+Di Replit Shell/Console (tab di bawah), jalankan:
+```bash
+npm install
+```
+
+Tunggu hingga selesai. Atau tunggu auto-install saat Run pertama kali.
+
+#### 6. Run Bot
 - Klik tombol **"Run"** di atas
+- Tunggu install dependencies selesai (pertama kali 1-2 menit)
 - Bot akan start!
 - Lihat console, harusnya muncul "Logged in as [bot name]!"
 
