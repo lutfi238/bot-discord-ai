@@ -2,29 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
 require('dotenv').config();
-
-// Optional memory monitoring (fallback if file doesn't exist)
-let logMemoryUsage, startMemoryMonitoring;
-try {
-    const memoryMonitor = require('./utils/memoryMonitor');
-    logMemoryUsage = memoryMonitor.logMemoryUsage;
-    startMemoryMonitoring = memoryMonitor.startMemoryMonitoring;
-} catch (e) {
-    // Fallback implementations if memoryMonitor doesn't exist
-    logMemoryUsage = (label) => {
-        const usage = process.memoryUsage();
-        const heapUsedMB = Math.round(usage.heapUsed / 1024 / 1024);
-        const heapTotalMB = Math.round(usage.heapTotal / 1024 / 1024);
-        const rssMB = Math.round(usage.rss / 1024 / 1024);
-        console.log(`📊 ${label}: Heap ${heapUsedMB}/${heapTotalMB}MB | RSS ${rssMB}MB`);
-    };
-    startMemoryMonitoring = () => {
-        setInterval(() => {
-            logMemoryUsage('Periodic Check');
-            if (global.gc) global.gc();
-        }, 15 * 60 * 1000);
-    };
-}
+const { logMemoryUsage, startMemoryMonitoring } = require('./utils/memoryMonitor');
 // Database utilities removed for hosting compatibility
 
 // Keep-alive server for Replit/UptimeRobot (prevents bot from sleeping)
