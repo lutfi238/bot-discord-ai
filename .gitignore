@@ -1,7 +1,8 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables (SENSITIVE - Don't commit!)
+.env
 .env.local
 .env.*.local
 
@@ -24,6 +25,8 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+conversations.json
+data/
 
 # Temporary files
 *.tmp
