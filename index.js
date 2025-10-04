@@ -9,6 +9,31 @@ const { callChatCompletion } = require('./utils/api');
 const { createWarningEmbed, createErrorEmbed } = require('./utils/embeds');
 // Database utilities removed for hosting compatibility
 
+// Keep-alive server for Replit/UptimeRobot (prevents bot from sleeping)
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+    res.json({
+        status: 'Bot is running! 🤖',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
+});
+
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        bot: client.isReady() ? 'online' : 'offline',
+        uptime: process.uptime()
+    });
+});
+
+app.listen(PORT, () => {
+    console.log(`✅ Keep-alive server running on port ${PORT}`);
+});
+
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
     partials: [Partials.Channel],
