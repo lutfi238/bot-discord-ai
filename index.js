@@ -62,6 +62,24 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const GROQ_BASE_URL = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
 
+// Validate environment variables
+if (!BOT_TOKEN) {
+    console.error('❌ ERROR: BOT_TOKEN is not set in environment variables!');
+    process.exit(1);
+}
+
+if (!GROQ_API_KEY) {
+    console.error('❌ ERROR: GROQ_API_KEY is not set in environment variables!');
+    console.error('Please set GROQ_API_KEY in your .env file or hosting platform dashboard.');
+    console.error('Get your free API key at: https://console.groq.com/keys');
+    process.exit(1);
+}
+
+console.log('✅ Environment variables loaded successfully');
+console.log(`🔑 GROQ_API_KEY: ${GROQ_API_KEY.substring(0, 10)}...${GROQ_API_KEY.substring(GROQ_API_KEY.length - 4)}`);
+console.log(`📦 GROQ_MODEL: ${GROQ_MODEL}`);
+console.log(`🌐 GROQ_BASE_URL: ${GROQ_BASE_URL}`);
+
 // In-memory conversation history (optimized for 500MB RAM)
 const conversationHistory = new Map();
 const MAX_CONVERSATIONS = 50; // Limit total conversations
