@@ -1,0 +1,18 @@
+# Wispbyte Configuration File
+# For Discord Bot deployment on free hosting
+
+# Startup Command
+startup=bash start.sh
+
+# Port (if needed)
+port=3000
+
+# Environment
+environment=production
+
+# Memory optimization
+node_options=--max-old-space-size=400
+
+# Auto restart on crash
+auto_restart=true
+
