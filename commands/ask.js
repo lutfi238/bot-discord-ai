@@ -10,25 +10,28 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('ask')
         .setDescription('Ask the AI a question')
-        .setDMPermission(true)
+        .setDMPermission(false)
         .addStringOption(option =>
             option.setName('question')
                 .setDescription('The question you want to ask')
                 .setRequired(true))
-        .addBooleanOption(option =>
-            option.setName('dm')
-                .setDescription('Send the reply via DM (private)')
-                .setRequired(false)
-        )
         .addBooleanOption(option =>
             option.setName('stream')
                 .setDescription('Stream the response in realtime')
                 .setRequired(false)
         ),
     async execute(interaction, provider, conversationHistory) {
+        // Check if command is used in a server
+        if (!interaction.inGuild()) {
+            await interaction.reply({ 
+                content: '❌ This command can only be used in a server, not in DMs.', 
+                ephemeral: true 
+            });
+            return;
+        }
+
         await interaction.deferReply();
         const question = interaction.options.getString('question');
-        const sendInDm = interaction.options.getBoolean('dm') ?? false;
         const useStream = interaction.options.getBoolean('stream') ?? true;
 
         try {
@@ -40,7 +43,7 @@ module.exports = {
                 .concat([{ role: 'user', content: question }]);
 
             let raw;
-            if (useStream && !sendInDm) {
+            if (useStream) {
                 // Streaming mode: incrementally edit the reply
                 let buffer = '';
                 let lastEdit = 0;
@@ -66,7 +69,7 @@ module.exports = {
                     },
                 }).then((full) => { raw = full; });
             } else {
-                // Non-streaming (also used for DM)
+                // Non-streaming mode
                 let warned = false;
                 raw = await callChatCompletion({
                     baseUrl: provider.baseUrl,
@@ -79,7 +82,6 @@ module.exports = {
                     timeoutMs: 60000,
                     maxRetries: 3,
                     onRetry: async (attempt) => {
-                        if (!interaction.inGuild()) return; // DM: keep quiet
                         if (warned) return;
                         warned = true;
                         const embed = createWarningEmbed(
@@ -113,20 +115,11 @@ module.exports = {
 
             const chunks = splitMessagePreservingCodeBlocks(formatted, 1990);
 
-            if (sendInDm && interaction.inGuild()) {
-                const dm = await interaction.user.createDM();
-                for (let i = 0; i < chunks.length; i += 1) {
-                    // eslint-disable-next-line no-await-in-loop
-                    await dm.send(chunks[i]);
-                }
-                await interaction.editReply({ content: 'Sent the reply to your DMs.', ephemeral: true });
-            } else {
-                // First chunk edits the reply, rest are followups
-                await interaction.editReply(chunks[0]);
-                for (let i = 1; i < chunks.length; i += 1) {
-                    // eslint-disable-next-line no-await-in-loop
-                    await interaction.followUp(chunks[i]);
-                }
+            // First chunk edits the reply, rest are followups
+            await interaction.editReply(chunks[0]);
+            for (let i = 1; i < chunks.length; i += 1) {
+                // eslint-disable-next-line no-await-in-loop
+                await interaction.followUp(chunks[i]);
             }
         } catch (error) {
             console.error('Error calling OpenRouter API:', error?.response?.data || error.message);

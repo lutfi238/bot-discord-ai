@@ -35,8 +35,7 @@ app.listen(PORT, () => {
 });
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
-    partials: [Partials.Channel],
+    intents: [GatewayIntentBits.Guilds],
 });
 
 client.commands = new Collection();
@@ -94,95 +93,6 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Handle normal text messages in DMs (no slash command needed)
-client.on('messageCreate', async (message) => {
-    try {
-        if (message.author.bot) return;
-        if (message.guildId) return; // only handle DMs
-        const question = (message.content || '').trim();
-        if (!question) return;
 
-        // Typing indicator
-        await message.channel.sendTyping();
-
-        const channelId = message.channel.id;
-        const history = conversationHistory.get(channelId) || [];
-
-        const messages = history.map(m => ({ role: m.role, content: m.content }))
-            .concat([{ role: 'user', content: question }]);
-
-        let warned = false;
-        const raw = await callChatCompletion({
-            baseUrl: OPENROUTER_BASE_URL,
-            apiKey: OPENROUTER_API_KEY,
-            model: OPENROUTER_MODEL,
-            messages: [
-                { role: 'system', content: SYSTEM_PROMPT },
-                ...messages,
-            ],
-            timeoutMs: 60000,
-            maxRetries: 3,
-            onRetry: async (attempt, delayMs, meta) => {
-                // In DMs we can optionally send a friendly message
-                if (warned) return;
-                warned = true;
-                try {
-                    await message.channel.send({
-                        embeds: [
-                            createWarningEmbed(
-                                `The AI service is busy (retrying, attempt ${attempt + 1}). This may take a few seconds...`,
-                                { title: 'Please wait' }
-                            ),
-                        ],
-                    });
-                } catch (_) { /* ignore */ }
-            },
-            onGiveUp: async (err) => {
-                try {
-                    await message.channel.send({
-                        embeds: [
-                            createErrorEmbed(
-                                'Failed to get a response from the AI service. Please try again later.',
-                                { title: 'Service Unavailable' }
-                            ),
-                        ],
-                    });
-                } catch (_) { /* ignore */ }
-            }
-        });
-        const text = formatForDiscord(raw);
-
-        history.push({ role: 'user', content: question });
-        // Keep raw in history
-        history.push({ role: 'assistant', content: raw });
-        // Reduced message limit for free hosting (memory optimization)
-        const MAX_MESSAGES = 10;
-        const trimmed = history.slice(-MAX_MESSAGES);
-        conversationHistory.set(channelId, trimmed);
-        
-        // Memory cleanup for free hosting
-        if (conversationHistory.size > 100) {
-            const oldestKeys = Array.from(conversationHistory.keys()).slice(0, 50);
-            oldestKeys.forEach(key => conversationHistory.delete(key));
-            console.log('Cleaned up old conversations to save memory');
-        }
-        // Note: Using in-memory storage for hosting compatibility
-
-        // Split long replies to respect Discord limit while preserving code blocks
-        const chunks = splitMessagePreservingCodeBlocks(text, 1990);
-        for (let i = 0; i < chunks.length; i += 1) {
-            if (i > 0) await message.channel.sendTyping();
-            // eslint-disable-next-line no-await-in-loop
-            await message.channel.send(chunks[i]);
-        }
-    } catch (error) {
-        console.error('DM handler error:', error?.response?.data || error.message);
-        try {
-            await message.channel.send('Sorry, I encountered an error trying to get a response.');
-        } catch (_) {
-            // ignore
-        }
-    }
-});
 
 client.login(BOT_TOKEN);
