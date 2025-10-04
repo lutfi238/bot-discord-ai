@@ -1,0 +1,37 @@
+# fly.toml app configuration file generated for bot-discord-ai
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+
+app = "bot-discord-ai"
+primary_region = "sin"  # Singapore - closest to Indonesia
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+
+[processes]
+  app = "npm start"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
