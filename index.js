@@ -103,7 +103,7 @@ setInterval(() => {
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    console.log(`🚀 Using Groq API - Ultra-fast AI responses with LLaMA 3.3 70B!`);
+    console.log(`🚀 Using Groq API - Ultra-fast AI responses with LLaMA 4 Scout!`);
     console.log(`💾 Memory optimized for 500MB RAM hosting`);
     console.log(`Model: ${GROQ_MODEL}`);
     console.log(`📊 Rate Limits: 30 RPM, 1K RPD, 12K TPM, 100K TPD`);
