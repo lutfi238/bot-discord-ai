@@ -109,7 +109,7 @@ client.once('ready', () => {
     console.log(`📊 Rate Limits: 30 RPM, 1K RPD, 12K TPM, 100K TPD`);
     client.user.setPresence({
         activities: [
-            { name: '/ask with meta-llama/llama-4-scout-17b-16e-instruct', type: ActivityType.Playing },
+            { name: '/ask with LLaMA 4 Scout', type: ActivityType.Playing },
         ],
         status: 'online',
     });
