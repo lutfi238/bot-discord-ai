@@ -1,5 +1,5 @@
 // Groq API Rate Limiter
-// Handles rate limits: 30 RPM, 1000 RPD, 12K TPM, 100K TPD
+// Handles rate limits: 30 RPM, ~14.4K RPD, 30K TPM, 100K TPD
 
 class GroqRateLimiter {
     constructor() {
@@ -12,8 +12,8 @@ class GroqRateLimiter {
         // Limits from Groq API (free tier)
         this.limits = {
             requestsPerMinute: 30,
-            requestsPerDay: 1000,
-            tokensPerMinute: 12000,
+            requestsPerDay: 14400,
+            tokensPerMinute: 30000,
             tokensPerDay: 100000,
         };
         

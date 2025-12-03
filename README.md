@@ -110,7 +110,7 @@ CLIENT_ID=your_discord_client_id_here```
 
 GROQ_API_KEY=your_groq_api_key_here```bash
 
-GROQ_MODEL=llama-3.3-70b-versatilenpm start
+GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instructnpm start
 
 GROQ_BASE_URL=https://api.groq.com/openai/v1```
 

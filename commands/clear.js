@@ -7,7 +7,7 @@ module.exports = {
         .setName('clear')
         .setDescription('Start a new chat (clears previous context)')
         .setDMPermission(false),
-    async execute(interaction, _provider, conversationHistory) {
+    async execute(interaction, provider, conversationHistory) {
         const channelId = interaction.channel?.id;
         if (!channelId) {
             await interaction.reply({ content: 'Could not determine channel ID.', ephemeral: true });
@@ -46,7 +46,7 @@ module.exports = {
                     inline: true 
                 }
             )
-            .setFooter({ text: 'Groq API - llama-3.3-70b-versatile' })
+            .setFooter({ text: `Groq API - ${provider.model}` })
             .setTimestamp();
         
         await interaction.reply({ embeds: [embed], ephemeral: true });

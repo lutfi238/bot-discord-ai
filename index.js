@@ -59,7 +59,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 
 // Groq API Configuration
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct';
 const GROQ_BASE_URL = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
 
 // Validate environment variables
@@ -109,7 +109,7 @@ client.once('ready', () => {
     console.log(`📊 Rate Limits: 30 RPM, 1K RPD, 12K TPM, 100K TPD`);
     client.user.setPresence({
         activities: [
-            { name: '/ask with llama-3.3-70b-versatile', type: ActivityType.Playing },
+            { name: '/ask with meta-llama/llama-4-scout-17b-16e-instruct', type: ActivityType.Playing },
         ],
         status: 'online',
     });
