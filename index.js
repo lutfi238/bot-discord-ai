@@ -3,7 +3,6 @@ const path = require('path');
 const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
 require('dotenv').config();
 const { logMemoryUsage, startMemoryMonitoring } = require('./utils/memoryMonitor');
-// Database utilities removed for hosting compatibility
 
 // Keep-alive server for Replit/UptimeRobot (prevents bot from sleeping)
 const express = require('express');
@@ -76,14 +75,16 @@ if (!GROQ_API_KEY) {
 }
 
 console.log('✅ Environment variables loaded successfully');
-console.log(`🔑 GROQ_API_KEY: ${GROQ_API_KEY.substring(0, 10)}...${GROQ_API_KEY.substring(GROQ_API_KEY.length - 4)}`);
 console.log(`📦 GROQ_MODEL: ${GROQ_MODEL}`);
-console.log(`🌐 GROQ_BASE_URL: ${GROQ_BASE_URL}`);
 
 // In-memory conversation history (optimized for 500MB RAM)
 const conversationHistory = new Map();
+const modelPreferences = new Map(); // Store model preference per channel
 const MAX_CONVERSATIONS = 50; // Limit total conversations
 const CONVERSATION_EXPIRY = 30 * 60 * 1000; // 30 minutes
+
+// Import CHAT_MODELS for dynamic model selection
+const { CHAT_MODELS } = require('./commands/model');
 
 // Auto-cleanup old conversations every 10 minutes
 setInterval(() => {
@@ -109,7 +110,7 @@ client.once('ready', () => {
     console.log(`📊 Rate Limits: 30 RPM, 1K RPD, 12K TPM, 100K TPD`);
     client.user.setPresence({
         activities: [
-            { name: '/ask with LLaMA 4 Scout', type: ActivityType.Playing },
+            { name: '/ask atau /model', type: ActivityType.Playing },
         ],
         status: 'online',
     });
@@ -149,10 +150,17 @@ client.on('interactionCreate', async interaction => {
     }
 
     try {
+        // Get dynamic model based on channel preference
+        const channelId = interaction.channel?.id;
+        const modelKey = modelPreferences.get(channelId) || 'llama-4-scout';
+        const modelConfig = CHAT_MODELS[modelKey] || CHAT_MODELS['llama-4-scout'];
+        const activeModel = modelConfig.id;
+
         await command.execute(
             interaction,
-            { apiKey: GROQ_API_KEY, model: GROQ_MODEL, baseUrl: GROQ_BASE_URL },
-            conversationHistory
+            { apiKey: GROQ_API_KEY, model: activeModel, baseUrl: GROQ_BASE_URL },
+            conversationHistory,
+            modelPreferences
         );
     } catch (error) {
         console.error(error);
@@ -165,5 +173,15 @@ client.on('interactionCreate', async interaction => {
 });
 
 
+
+// Graceful shutdown handler
+const shutdown = (signal) => {
+    console.log(`\n${signal} received. Shutting down gracefully...`);
+    client.destroy();
+    process.exit(0);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 client.login(BOT_TOKEN);

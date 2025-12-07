@@ -1,11 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const axios = require('axios');
 const { formatForDiscord, splitMessagePreservingCodeBlocks } = require('../utils/formatting');
 const { SYSTEM_PROMPT } = require('../utils/prompt');
 const { callChatCompletion, callChatCompletionStream } = require('../utils/api');
 const { createWarningEmbed, createErrorEmbed } = require('../utils/embeds');
 const { rateLimiter } = require('../utils/groqRateLimit');
-// Database utilities removed for hosting compatibility
 
 module.exports = {
     data: new SlashCommandBuilder()

@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { rateLimiter } = require('../utils/groqRateLimit');
-// Database utilities removed for hosting compatibility
 
 module.exports = {
     data: new SlashCommandBuilder()
