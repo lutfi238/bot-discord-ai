@@ -1,42 +1,12 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
-// Available models from Groq API
+// Available models from Algion API (Free OpenAI-compatible API)
 const CHAT_MODELS = {
-    'llama-4-scout': {
-        id: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        name: 'LLaMA 4 Scout',
-        description: 'Paling Sat-set. Cepat, irit, cocok buat ngobrol santai.',
-        emoji: '⚡'
-    },
-    'llama-3.3-70b': {
-        id: 'llama-3.3-70b-versatile',
-        name: 'LLaMA 3.3 70B',
-        description: 'Paling Pintar. Bagus untuk mikir keras atau cerita panjang.',
-        emoji: '🧠'
-    },
-    'qwen-2.5-32b': {
-        id: 'qwen-2.5-32b',
-        name: 'Qwen 2.5 32B',
-        description: 'Jago coding dan logika matematika.',
-        emoji: '💻'
-    },
-    'qwen-3-32b': {
-        id: 'qwen/qwen3-32b',
-        name: 'Qwen 3 32B',
-        description: 'Versi terbaru Qwen, lebih pintar.',
-        emoji: '🚀'
-    },
-    'gemma-2-9b': {
-        id: 'gemma2-9b-it',
-        name: 'Gemma 2 9B (Google)',
-        description: 'Ringan dan sopan dari Google.',
-        emoji: '🌸'
-    },
-    'mixtral-8x7b': {
-        id: 'mixtral-8x7b-32768',
-        name: 'Mixtral 8x7B',
-        description: 'Model klasik dengan context panjang 32K.',
-        emoji: '📚'
+    'gemini-3-pro': {
+        id: 'gemini-3-pro-preview',
+        name: 'Gemini 3 Pro Preview',
+        description: 'Model Google Gemini 3 Pro terbaru. Powerful, gratis dari Algion API!',
+        emoji: '✨'
     }
 };
 

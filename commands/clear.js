@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { rateLimiter } = require('../utils/groqRateLimit');
+const { rateLimiter } = require('../utils/rateLimit');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -19,10 +19,13 @@ module.exports = {
         // Force garbage collection if available
         if (global.gc) global.gc();
         
-        // Show memory and rate limit stats
+        // Show memory stats
         const usage = process.memoryUsage();
         const heapUsedMB = Math.round(usage.heapUsed / 1024 / 1024);
-        const stats = rateLimiter.getStats();
+        
+        // Get user's rate limit stats
+        const userId = interaction.user.id;
+        const stats = rateLimiter.getStats(userId);
         
         const embed = new EmbedBuilder()
             .setColor(0x00FF00)
@@ -35,19 +38,19 @@ module.exports = {
                     inline: false 
                 },
                 { 
-                    name: '📊 Groq API Usage (Requests)', 
-                    value: `Minute: ${stats.requestsPerMinute.current}/${stats.requestsPerMinute.limit} (${stats.requestsPerMinute.percentage}%)\nDay: ${stats.requestsPerDay.current}/${stats.requestsPerDay.limit} (${stats.requestsPerDay.percentage}%)`, 
+                    name: '📊 Your Usage (Anti-spam)', 
+                    value: `Minute: ${stats.minute.current}/${stats.minute.limit} (${stats.minute.percentage}%)\\nHour: ${stats.hour.current}/${stats.hour.limit} (${stats.hour.percentage}%)`, 
                     inline: true 
                 },
                 { 
-                    name: '🎯 Groq API Usage (Tokens)', 
-                    value: `Minute: ${stats.tokensPerMinute.current.toLocaleString()}/${stats.tokensPerMinute.limit.toLocaleString()} (${stats.tokensPerMinute.percentage}%)\nDay: ${stats.tokensPerDay.current.toLocaleString()}/${stats.tokensPerDay.limit.toLocaleString()} (${stats.tokensPerDay.percentage}%)`, 
+                    name: '✨ Model', 
+                    value: `Gemini 3 Pro Preview via Algion API (FREE!)`, 
                     inline: true 
                 }
             )
-            .setFooter({ text: `Groq API - ${provider.model}` })
+            .setFooter({ text: `Algion API - ${provider.model}` })
             .setTimestamp();
         
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed] });
     },
 }; 

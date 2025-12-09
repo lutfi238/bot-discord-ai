@@ -1,118 +1,76 @@
-# Discord AI Bot with Groq API (LLaMA 3.3 70B)# Discord AI Bot with Comet API (Claude Sonnet 4.5)
+# Discord AI Bot with Algion API (Gemini 3 Pro Preview)
 
+🤖 Discord bot yang menggunakan Gemini 3 Pro Preview melalui Algion API (Free OpenAI-compatible API) untuk memberikan respons AI yang cerdas.
 
+## Features
 
-🤖 Discord bot yang menggunakan LLaMA 3.3 70B Versatile melalui Groq API untuk memberikan respons AI yang cerdas dan super cepat.🤖 Discord bot yang menggunakan Claude Sonnet 4.5 melalui Comet API untuk memberikan respons AI yang cerdas.
+- ✅ `/ask` - Tanya pertanyaan ke AI (Gemini 3 Pro Preview)
+- ✅ `/clear` - Hapus riwayat percakapan
+- ✅ Streaming response real-time
+- ✅ DM support
+- ✅ Conversation history per channel
+- ✅ 100% GRATIS - Algion API free forever!
 
-
-
-## ✨ Features## Features
-
-- ✅ `/ask` - Tanya pertanyaan ke AI (LLaMA 3.3 70B Versatile)- ✅ `/ask` - Tanya pertanyaan ke AI (Claude Sonnet 4.5)
-
-- ✅ `/clear` - Hapus riwayat percakapan & lihat stats- ✅ `/clear` - Hapus riwayat percakapan
-
-- ✅ Streaming response real-time- ✅ Streaming response real-time
-
-- ✅ Rate limit management otomatis- ✅ DM support
-
-- ✅ Server-only (no DM)- ✅ Conversation history per channel
-
-- ✅ Memory optimized untuk 500MB RAM
-
-- ✅ Conversation history per channel## Tech Stack
+## Tech Stack
 
 - **Discord.js** v14 - Discord bot framework
+- **Algion API** - Free OpenAI-compatible API
+- **Gemini 3 Pro Preview** - Google's latest AI model
+- **Node.js** - Runtime environment
 
-## 🚀 Tech Stack- **Comet API** - Claude Sonnet 4.5 access
-
-- **Discord.js** v14 - Discord bot framework- **Node.js** - Runtime environment
-
-- **Groq API** - Ultra-fast LLM inference
-
-- **LLaMA 3.3 70B Versatile** - Advanced language model## Setup
-
-- **Node.js** 18+ - Runtime environment
+## Setup
 
 ### 1. Clone Repository
 
-## 📊 Groq API Rate Limits (Free Tier)```bash
-
-git clone https://github.com/lutfi238/bot-discord-ai.git
-
-| Limit Type | Per Minute | Per Day |cd bot-discord-ai
-
-|------------|------------|---------|```
-
-| **Requests** | 30 | 1,000 |
-
-| **Tokens** | 12,000 | 100,000 |### 2. Install Dependencies
-
 ```bash
-
-Bot akan otomatis memberitahu user ketika rate limit tercapai dan kapan bisa digunakan lagi.npm install
-
+git clone https://github.com/lutfi238/bot-discord-ai.git
+cd bot-discord-ai
 ```
 
-## 🔧 Setup
+### 2. Install Dependencies
+
+```bash
+npm install
+```
 
 ### 3. Configure Environment Variables
 
-### 1. Clone RepositoryCopy `.env.example` to `.env` dan isi dengan credentials Anda:
+Copy `.env.example` to `.env` dan isi dengan credentials Anda:
 
 ```bash
-
-git clone https://github.com/lutfi238/bot-discord-ai.git```bash
-
-cd bot-discord-aicp .env.example .env
-
-``````
-
-
-
-### 2. Install DependenciesEdit `.env`:
-
-```bash```env
-
-npm installBOT_TOKEN=your_discord_bot_token_here
-
-```CLIENT_ID=your_discord_client_id_here
-
-OPENROUTER_API_KEY=your_comet_api_key_here
-
-### 3. Configure Environment VariablesOPENROUTER_MODEL=claude-sonnet-4-5
-
-Copy `.env.example` to `.env`:OPENROUTER_BASE_URL=https://api.cometapi.com/v1
-
+cp .env.example .env
 ```
-
-```bash
-
-cp .env.example .env**Cara mendapatkan credentials:**
-
-```- **Discord Bot Token**: https://discord.com/developers/applications
-
-- **Comet API Key**: https://cometapi.com
 
 Edit `.env`:
 
-```env### 4. Deploy Commands
+```env
+# Discord Bot
+BOT_TOKEN=your_discord_bot_token_here
+CLIENT_ID=your_discord_client_id_here
 
-# Discord Bot```bash
+# Algion API
+ALGION_API_KEY=free
+ALGION_MODEL=gemini-3-pro-preview
+ALGION_BASE_URL=https://api.algion.dev/v1
+```
 
-BOT_TOKEN=your_discord_bot_token_herenpm run deploy
+**Cara mendapatkan credentials:**
 
-CLIENT_ID=your_discord_client_id_here```
+- **Discord Bot Token**: https://discord.com/developers/applications
+- **Algion API Key**: https://t.me/AlgionBot (Telegram bot - FREE!)
+  - Atau gunakan `free` sebagai API key (default)
 
+### 4. Deploy Commands
 
+```bash
+npm run deploy
+```
 
-# Groq API### 5. Run Bot Locally
+### 5. Run Bot Locally
 
-GROQ_API_KEY=your_groq_api_key_here```bash
-
-GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instructnpm start
-
-GROQ_BASE_URL=https://api.groq.com/openai/v1```
+```bash
+npm start
+```
 
 ```
 

@@ -2,7 +2,6 @@
 
 const axios = require('axios');
 const readline = require('readline');
-const { rateLimiter } = require('./groqRateLimit');
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -10,23 +9,9 @@ function sleep(ms) {
 
 /**
  * Call chat completions API with retries and backoff.
- * Optimized for Groq API with rate limiting
+ * Optimized for Algion API (free, no rate limits)
  */
-async function callChatCompletion({ baseUrl, apiKey, model, messages, timeoutMs = 60000, maxRetries = 3, onRetry, onGiveUp, onRateLimit }) {
-  // Estimate token usage (rough estimate: ~4 chars per token)
-  const estimatedTokens = JSON.stringify(messages).length / 4 + 500; // +500 for response
-  
-  // Check rate limit before making request
-  const rateLimitCheck = rateLimiter.canMakeRequest(estimatedTokens);
-  if (!rateLimitCheck.allowed) {
-    const error = new Error('Rate limit exceeded');
-    error.rateLimitInfo = rateLimitCheck;
-    if (onRateLimit) {
-      try { await onRateLimit(rateLimitCheck); } catch (_) { /* ignore */ }
-    }
-    throw error;
-  }
-
+async function callChatCompletion({ baseUrl, apiKey, model, messages, timeoutMs = 60000, maxRetries = 3, onRetry, onGiveUp }) {
   let attempt = 0;
   let lastError;
   while (attempt <= maxRetries) {
@@ -35,7 +20,7 @@ async function callChatCompletion({ baseUrl, apiKey, model, messages, timeoutMs 
         model,
         messages,
         temperature: 0.7,
-        max_tokens: 2048, // Reduced for Groq API
+        max_tokens: 4096, // Higher for Algion API
       };
       
       const res = await axios.post(
@@ -49,13 +34,6 @@ async function callChatCompletion({ baseUrl, apiKey, model, messages, timeoutMs 
           timeout: timeoutMs,
         }
       );
-
-      // Update rate limiter with response headers
-      rateLimiter.updateFromHeaders(res.headers);
-      
-      // Record successful request with actual token usage
-      const tokensUsed = res.data?.usage?.total_tokens || estimatedTokens;
-      rateLimiter.recordRequest(tokensUsed);
       
       const text = res.data?.choices?.[0]?.message?.content?.trim();
       if (!text) throw new Error('Empty response from model');
@@ -63,21 +41,6 @@ async function callChatCompletion({ baseUrl, apiKey, model, messages, timeoutMs 
     } catch (error) {
       lastError = error;
       const status = error?.response?.status;
-      
-      // Handle rate limit errors (429)
-      if (status === 429) {
-        rateLimiter.updateFromHeaders(error?.response?.headers);
-        if (onRateLimit) {
-          const retryAfter = error?.response?.headers?.['retry-after'] || 60;
-          try { 
-            await onRateLimit({ 
-              allowed: false, 
-              reason: 'api_rate_limit',
-              resetIn: parseInt(retryAfter),
-            }); 
-          } catch (_) { /* ignore */ }
-        }
-      }
       
       const isRetryable =
         status === 429 ||
@@ -89,15 +52,14 @@ async function callChatCompletion({ baseUrl, apiKey, model, messages, timeoutMs 
         const detail = error?.response?.data?.error?.message || error?.message || 'Unknown error';
         const err = new Error(`Chat API error${status ? ` (${status})` : ''}: ${detail}`);
         err.status = status;
-        err.rateLimitInfo = error.rateLimitInfo;
         if (onGiveUp) {
           try { await onGiveUp(err); } catch (_) { /* ignore */ }
         }
         throw err;
       }
 
-      // Backoff with jitter or use Retry-After
-      let delay = Math.max(1000, 1000 * Math.pow(2, attempt)); // 1s, 2s, 4s, 8s
+      // Backoff with jitter
+      let delay = Math.max(1000, 1000 * Math.pow(2, attempt));
       const retryAfter = error?.response?.headers?.['retry-after'];
       if (retryAfter) {
         const parsed = Number(retryAfter);
@@ -122,21 +84,7 @@ async function callChatCompletion({ baseUrl, apiKey, model, messages, timeoutMs 
  * Stream chat completions (SSE) and emit incremental content.
  * Returns the full text when finished.
  */
-async function callChatCompletionStream({ baseUrl, apiKey, model, messages, timeoutMs = 60000, onDelta, onRateLimit }) {
-  // Estimate token usage
-  const estimatedTokens = JSON.stringify(messages).length / 4 + 500;
-  
-  // Check rate limit before making request
-  const rateLimitCheck = rateLimiter.canMakeRequest(estimatedTokens);
-  if (!rateLimitCheck.allowed) {
-    const error = new Error('Rate limit exceeded');
-    error.rateLimitInfo = rateLimitCheck;
-    if (onRateLimit) {
-      try { await onRateLimit(rateLimitCheck); } catch (_) { /* ignore */ }
-    }
-    throw error;
-  }
-
+async function callChatCompletionStream({ baseUrl, apiKey, model, messages, timeoutMs = 60000, onDelta, onError }) {
   const url = `${baseUrl}/chat/completions`;
   const res = await axios.post(
     url,
@@ -145,7 +93,7 @@ async function callChatCompletionStream({ baseUrl, apiKey, model, messages, time
       messages,
       stream: true,
       temperature: 0.7,
-      max_tokens: 2048, // Reduced for Groq API
+      max_tokens: 4096, // Higher for Algion API
     },
     {
       headers: {
@@ -183,8 +131,6 @@ async function callChatCompletionStream({ baseUrl, apiKey, model, messages, time
     });
 
     rl.on('close', () => {
-      // Record request after streaming completes
-      rateLimiter.recordRequest(estimatedTokens);
       resolve(accumulated);
     });
 

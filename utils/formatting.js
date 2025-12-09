@@ -3,6 +3,30 @@
 'use strict';
 
 /**
+ * Clean excessive emojis and problematic characters
+ */
+function cleanDiscordText(text) {
+  if (!text || typeof text !== 'string') return text;
+  
+  // Remove excessive consecutive emojis (keep max 2)
+  text = text.replace(/([\u{1F300}-\u{1F9FF}][\u{FE00}-\u{FE0F}]?){3,}/gu, (match) => {
+    const emojis = [...match.matchAll(/([\u{1F300}-\u{1F9FF}][\u{FE00}-\u{FE0F}]?)/gu)];
+    return emojis.slice(0, 2).map(m => m[0]).join('');
+  });
+  
+  // Remove zero-width characters and other invisible characters
+  text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  
+  // Remove excessive newlines (max 2 consecutive)
+  text = text.replace(/\n{4,}/g, '\n\n\n');
+  
+  // Remove HTML tags if any slipped through
+  text = text.replace(/<[^>]*>/g, '');
+  
+  return text;
+}
+
+/**
  * Convert Markdown-style tables to bullet lists for Discord.
  * Skips conversion inside existing code fences.
  */
@@ -175,12 +199,18 @@ function splitMessagePreservingCodeBlocks(content, maxLen = 1990) {
  * High-level formatter: make AI output Discord-safe and readable.
  */
 function formatForDiscord(raw) {
-  const noTables = convertMarkdownTablesToAsciiBlocks(raw);
+  // First, clean problematic characters and excessive emojis
+  let cleaned = cleanDiscordText(raw);
+  
+  // Then convert any tables to bullet lists
+  const noTables = convertMarkdownTablesToAsciiBlocks(cleaned);
+  
   return noTables;
 }
 
 module.exports = {
   formatForDiscord,
+  cleanDiscordText,
   convertMarkdownTablesToAsciiBlocks,
   splitMessagePreservingCodeBlocks,
 };

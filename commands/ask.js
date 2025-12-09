@@ -3,7 +3,7 @@ const { formatForDiscord, splitMessagePreservingCodeBlocks } = require('../utils
 const { SYSTEM_PROMPT } = require('../utils/prompt');
 const { callChatCompletion, callChatCompletionStream } = require('../utils/api');
 const { createWarningEmbed, createErrorEmbed } = require('../utils/embeds');
-const { rateLimiter } = require('../utils/groqRateLimit');
+const { rateLimiter } = require('../utils/rateLimit');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -29,6 +29,35 @@ module.exports = {
             return;
         }
 
+        // Check user rate limit
+        const userId = interaction.user.id;
+        const rateLimitCheck = rateLimiter.checkLimit(userId);
+        
+        if (!rateLimitCheck.allowed) {
+            const minutes = Math.floor(rateLimitCheck.resetIn / 60);
+            const seconds = rateLimitCheck.resetIn % 60;
+            const timeStr = minutes > 0 
+                ? `${minutes}m ${seconds}s`
+                : `${seconds}s`;
+            
+            const limitType = rateLimitCheck.reason === 'per_minute' 
+                ? `${rateLimitCheck.limit} requests per minute`
+                : `${rateLimitCheck.limit} requests per hour`;
+            
+            const embed = new EmbedBuilder()
+                .setColor(0xFF9900)
+                .setTitle('⏱️ Rate Limit Reached')
+                .setDescription(`You've reached the limit of **${limitType}**.\n\n⏰ Try again in: **${timeStr}**`)
+                .setFooter({ text: 'Anti-spam protection' })
+                .setTimestamp();
+            
+            await interaction.reply({ embeds: [embed], ephemeral: true });
+            return;
+        }
+
+        // Record this request
+        rateLimiter.recordRequest(userId);
+
         await interaction.deferReply();
         const question = interaction.options.getString('question');
         const useStream = interaction.options.getBoolean('stream') ?? true;
@@ -51,14 +80,13 @@ module.exports = {
             const messages = history.map(m => ({ role: m.role, content: m.content }))
                 .concat([{ role: 'user', content: question }]);
 
-            // Rate limit handler
-            const onRateLimit = async (rateLimitInfo) => {
-                const message = rateLimiter.getRateLimitMessage(rateLimitInfo);
+            // Simple error handler - no rate limiting needed for free API
+            const onError = async (error) => {
                 const embed = new EmbedBuilder()
-                    .setColor(0xFF9900)
-                    .setTitle('⏱️ Groq API Rate Limit Reached')
-                    .setDescription(message)
-                    .setFooter({ text: 'Groq API Free Tier Limits' })
+                    .setColor(0xFF0000)
+                    .setTitle('❌ API Error')
+                    .setDescription(error.message || 'An error occurred while calling the API.')
+                    .setFooter({ text: 'Algion API' })
                     .setTimestamp();
                 
                 try {
@@ -91,7 +119,7 @@ module.exports = {
                             } catch (_) { /* ignore */ }
                         }
                     },
-                    onRateLimit,
+                    onError,
                 }).then((full) => { raw = full; });
             } else {
                 // Non-streaming mode
@@ -124,7 +152,6 @@ module.exports = {
                             await interaction.followUp({ embeds: [embed], ephemeral: true });
                         } catch (_) { /* ignore */ }
                     },
-                    onRateLimit,
                 });
             }
             const formatted = formatForDiscord(raw);
@@ -160,23 +187,7 @@ module.exports = {
                 await interaction.followUp(chunks[i]);
             }
         } catch (error) {
-            console.error('Error calling Groq API:', error?.response?.data || error.message);
-            
-            // Handle rate limit errors specifically
-            if (error.rateLimitInfo) {
-                const message = rateLimiter.getRateLimitMessage(error.rateLimitInfo);
-                const embed = new EmbedBuilder()
-                    .setColor(0xFF9900)
-                    .setTitle('⏱️ Groq API Rate Limit Reached')
-                    .setDescription(message)
-                    .setFooter({ text: 'Groq API Free Tier Limits' })
-                    .setTimestamp();
-                
-                try {
-                    await interaction.editReply({ embeds: [embed] });
-                } catch (_) { /* ignore */ }
-                return;
-            }
+            console.error('Error calling Algion API:', error?.response?.data || error.message);
             
             await interaction.editReply('Sorry, I encountered an error trying to get a response.');
         }

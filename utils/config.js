@@ -28,7 +28,7 @@ module.exports = {
     API: {
         TIMEOUT_MS: 60000,          // 60 seconds
         MAX_RETRIES: 3,
-        MAX_TOKENS: 2048,
+        MAX_TOKENS: 4096,           // Algion supports higher tokens
         TEMPERATURE: 0.7
     },
 
@@ -38,11 +38,12 @@ module.exports = {
         STREAM_THROTTLE_MS: 400     // Throttle stream updates
     },
 
-    // Rate Limits (Groq Free Tier)
-    RATE_LIMITS: {
-        REQUESTS_PER_MINUTE: 30,
-        REQUESTS_PER_DAY: 14400,
-        TOKENS_PER_MINUTE: 30000,
-        TOKENS_PER_DAY: 100000
+    // User Rate Limits (Anti-spam protection)
+    // Algion API is free without limits, but we limit users to prevent abuse
+    USER_RATE_LIMITS: {
+        REQUESTS_PER_MINUTE: 10,    // 10 requests per minute per user
+        REQUESTS_PER_HOUR: 60,      // 60 requests per hour per user
+        WINDOW_MINUTE_MS: 60 * 1000,
+        WINDOW_HOUR_MS: 60 * 60 * 1000
     }
 };

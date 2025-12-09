@@ -56,10 +56,10 @@ for (const file of commandFiles) {
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
-// Groq API Configuration
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = process.env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct';
-const GROQ_BASE_URL = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
+// Algion API Configuration (Free OpenAI-compatible API)
+const ALGION_API_KEY = process.env.ALGION_API_KEY || 'free';
+const ALGION_MODEL = process.env.ALGION_MODEL || 'gemini-3-pro-preview';
+const ALGION_BASE_URL = process.env.ALGION_BASE_URL || 'https://api.algion.dev/v1';
 
 // Validate environment variables
 if (!BOT_TOKEN) {
@@ -67,15 +67,15 @@ if (!BOT_TOKEN) {
     process.exit(1);
 }
 
-if (!GROQ_API_KEY) {
-    console.error('❌ ERROR: GROQ_API_KEY is not set in environment variables!');
-    console.error('Please set GROQ_API_KEY in your .env file or hosting platform dashboard.');
-    console.error('Get your free API key at: https://console.groq.com/keys');
+if (!ALGION_API_KEY) {
+    console.error('❌ ERROR: ALGION_API_KEY is not set in environment variables!');
+    console.error('Please set ALGION_API_KEY in your .env file or hosting platform dashboard.');
+    console.error('Get your free API key from Telegram: https://t.me/AlgionBot');
     process.exit(1);
 }
 
 console.log('✅ Environment variables loaded successfully');
-console.log(`📦 GROQ_MODEL: ${GROQ_MODEL}`);
+console.log(`📦 ALGION_MODEL: ${ALGION_MODEL}`);
 
 // In-memory conversation history (optimized for 500MB RAM)
 const conversationHistory = new Map();
@@ -104,13 +104,13 @@ setInterval(() => {
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    console.log(`🚀 Using Groq API - Ultra-fast AI responses with LLaMA 4 Scout!`);
+    console.log(`🚀 Using Algion API - Free OpenAI-compatible API with Gemini!`);
     console.log(`💾 Memory optimized for 500MB RAM hosting`);
-    console.log(`Model: ${GROQ_MODEL}`);
-    console.log(`📊 Rate Limits: 30 RPM, 1K RPD, 12K TPM, 100K TPD`);
+    console.log(`Model: ${ALGION_MODEL}`);
+    console.log(`📊 Free API - No rate limits!`);
     client.user.setPresence({
         activities: [
-            { name: '/ask atau /model', type: ActivityType.Playing },
+            { name: '/ask with Gemini 3 Pro', type: ActivityType.Playing },
         ],
         status: 'online',
     });
@@ -152,13 +152,13 @@ client.on('interactionCreate', async interaction => {
     try {
         // Get dynamic model based on channel preference
         const channelId = interaction.channel?.id;
-        const modelKey = modelPreferences.get(channelId) || 'llama-4-scout';
-        const modelConfig = CHAT_MODELS[modelKey] || CHAT_MODELS['llama-4-scout'];
+        const modelKey = modelPreferences.get(channelId) || 'gemini-3-pro';
+        const modelConfig = CHAT_MODELS[modelKey] || CHAT_MODELS['gemini-3-pro'];
         const activeModel = modelConfig.id;
 
         await command.execute(
             interaction,
-            { apiKey: GROQ_API_KEY, model: activeModel, baseUrl: GROQ_BASE_URL },
+            { apiKey: ALGION_API_KEY, model: activeModel, baseUrl: ALGION_BASE_URL },
             conversationHistory,
             modelPreferences
         );
